@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useContext } from "react";
+import { useSession, signOut } from "next-auth/react";
 import {
   FaMountain,
   FaPaperPlane,
@@ -184,6 +185,9 @@ const IntegratedDashboard = () => {
   }
   const { taskType } = context;
 
+  // Session
+  const { data: session } = useSession();
+
   // Load initial data
   useEffect(() => {
     loadDashboardData();
@@ -349,29 +353,47 @@ const IntegratedDashboard = () => {
         <div className="flex items-center justify-between bg-blue-600 text-white px-4 py-3 shadow-md">
           <div className="flex items-center gap-3">
             <FaMountain size={30} />
-            <h2 className="text-xl font-medium">CS AI Assistant - Integrated Dashboard</h2>
+            <h2 className="text-xl font-medium">AI Customer Support</h2>
+            <nav className="flex space-x-4 ml-8">
+              <button
+                onClick={() => setCurrentView("dashboard")}
+                className="text-white hover:text-gray-200 transition-colors"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => setCurrentView("tickets")}
+                className="text-white hover:text-gray-200 transition-colors"
+              >
+                Tickets
+              </button>
+              <button
+                onClick={() => setCurrentView("chat")}
+                className="text-white hover:text-gray-200 transition-colors"
+              >
+                Chat
+              </button>
+              <button
+                onClick={() => setCurrentView("search")}
+                className="text-white hover:text-gray-200 transition-colors"
+              >
+                Search
+              </button>
+              <button
+                onClick={() => setCurrentView("analytics")}
+                className="text-white hover:text-gray-200 transition-colors"
+              >
+                Analytics
+              </button>
+            </nav>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-white">Welcome, {session?.user?.name || session?.user?.email || 'User'}</span>
             <button
-              onClick={() => setCurrentView("tickets")}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-colors"
+              onClick={() => signOut()}
+              className="text-sm text-white hover:text-gray-200 transition-colors"
             >
-              <FaTicketAlt size={16} />
-              Tickets
-            </button>
-            <button
-              onClick={() => setCurrentView("chat")}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-colors"
-            >
-              <FaComments size={16} />
-              Live Chat
-            </button>
-            <button
-              onClick={() => setCurrentView("analytics")}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-colors"
-            >
-              <FaChartBar size={16} />
-              Analytics
+              Sign out
             </button>
             <LanguageSelector
               selectedLanguage={selectedLanguage}

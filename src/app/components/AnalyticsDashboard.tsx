@@ -41,72 +41,23 @@ const AnalyticsDashboard = () => {
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("30d");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data - in real app, this would come from your API
   useEffect(() => {
     const fetchAnalyticsData = async () => {
       setIsLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        const mockData: AnalyticsData = {
-          totalTickets: 1247,
-          resolvedTickets: 1189,
-          avgResponseTime: 2.3,
-          avgResolutionTime: 4.7,
-          customerSatisfaction: 4.6,
-          agentPerformance: [
-            {
-              id: "1",
-              name: "Alice Johnson",
-              ticketsResolved: 156,
-              avgResponseTime: 1.8,
-              satisfaction: 4.8,
-              status: "online"
-            },
-            {
-              id: "2",
-              name: "Bob Smith",
-              ticketsResolved: 143,
-              avgResponseTime: 2.1,
-              satisfaction: 4.7,
-              status: "online"
-            },
-            {
-              id: "3",
-              name: "Carol Davis",
-              ticketsResolved: 134,
-              avgResponseTime: 2.5,
-              satisfaction: 4.5,
-              status: "busy"
-            },
-            {
-              id: "4",
-              name: "David Wilson",
-              ticketsResolved: 128,
-              avgResponseTime: 2.8,
-              satisfaction: 4.4,
-              status: "offline"
-            }
-          ],
-          ticketTrends: [
-            { date: "2024-01-01", tickets: 45, resolved: 42 },
-            { date: "2024-01-02", tickets: 52, resolved: 48 },
-            { date: "2024-01-03", tickets: 38, resolved: 35 },
-            { date: "2024-01-04", tickets: 61, resolved: 58 },
-            { date: "2024-01-05", tickets: 47, resolved: 44 },
-            { date: "2024-01-06", tickets: 55, resolved: 52 },
-            { date: "2024-01-07", tickets: 43, resolved: 41 }
-          ],
-          topIssues: [
-            { category: "Login Issues", count: 234, percentage: 18.8 },
-            { category: "Password Reset", count: 198, percentage: 15.9 },
-            { category: "Account Access", count: 167, percentage: 13.4 },
-            { category: "Billing Questions", count: 145, percentage: 11.6 },
-            { category: "Technical Support", count: 123, percentage: 9.9 }
-          ]
-        };
-        setAnalyticsData(mockData);
+      try {
+        const response = await fetch(`/api/analytics?timeRange=${timeRange}`);
+        const result = await response.json();
+
+        if (result.success) {
+          setAnalyticsData(result.data);
+        } else {
+          console.error("Failed to fetch analytics data:", result.error);
+        }
+      } catch (error) {
+        console.error("Error fetching analytics data:", error);
+      } finally {
         setIsLoading(false);
-      }, 1000);
+      }
     };
 
     fetchAnalyticsData();

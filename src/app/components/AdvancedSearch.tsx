@@ -54,65 +54,48 @@ const AdvancedSearch = () => {
   const [sortBy, setSortBy] = useState<"relevance" | "date" | "priority">("relevance");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  // Mock data for demonstration
-  const mockResults: SearchResult[] = [
-    {
-      id: "#1234",
-      title: "Login issue after password reset",
-      description: "Customer unable to access account after password reset. Error message: 'Invalid credentials'. Multiple failed attempts.",
-      status: "open",
-      priority: "high",
-      category: "Authentication",
-      agent: "Alice Johnson",
-      customerName: "John Doe",
-      createdDate: "2024-01-15",
-      updatedDate: "2024-01-15",
-      tags: ["login", "password", "urgent"],
-      relevance: 95
-    },
-    {
-      id: "#1235",
-      title: "Billing discrepancy in monthly invoice",
-      description: "Customer reports incorrect charges on monthly bill. Amount differs from agreed pricing plan.",
-      status: "in-progress",
-      priority: "medium",
-      category: "Billing",
-      agent: "Bob Smith",
-      customerName: "Jane Smith",
-      createdDate: "2024-01-14",
-      updatedDate: "2024-01-15",
-      tags: ["billing", "invoice", "discrepancy"],
-      relevance: 87
-    },
-    {
-      id: "#1236",
-      title: "Feature request: Dark mode support",
-      description: "Customer requesting dark mode feature for better accessibility and user experience.",
-      status: "resolved",
-      priority: "low",
-      category: "Feature Request",
-      agent: "Carol Davis",
-      customerName: "Mike Johnson",
-      createdDate: "2024-01-10",
-      updatedDate: "2024-01-12",
-      tags: ["feature", "ui", "accessibility"],
-      relevance: 76
-    },
-    {
-      id: "#1237",
-      title: "API rate limiting issue",
-      description: "Customer experiencing API rate limiting errors when making multiple requests per minute.",
-      status: "closed",
-      priority: "urgent",
-      category: "Technical",
-      agent: "David Wilson",
-      customerName: "Tech Corp",
-      createdDate: "2024-01-08",
-      updatedDate: "2024-01-09",
-      tags: ["api", "rate-limit", "technical"],
-      relevance: 91
-    }
-  ];
+  // Fetch tickets from API
+  useEffect(() => {
+    const fetchTickets = async () => {
+      setIsLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (filters.status.length > 0) params.append("status", filters.status.join(","));
+        if (filters.priority.length > 0) params.append("priority", filters.priority.join(","));
+        if (filters.category.length > 0) params.append("category", filters.category.join(","));
+        if (filters.customerName) params.append("customerId", filters.customerName);
+
+        const response = await fetch(`/api/tickets?${params.toString()}`);
+        const result = await response.json();
+
+        if (result.success) {
+          const formattedResults: SearchResult[] = result.data.map((ticket: any) => ({
+            id: `#${ticket.id}`,
+            title: ticket.title,
+            description: ticket.description,
+            status: ticket.status as "open" | "in-progress" | "resolved" | "closed",
+            priority: ticket.priority as "low" | "medium" | "high" | "urgent",
+            category: ticket.category,
+            agent: ticket.agent?.name || "Unassigned",
+            customerName: ticket.customer?.name || "Unknown",
+            createdDate: new Date(ticket.createdAt).toISOString().split('T')[0],
+            updatedDate: new Date(ticket.updatedAt).toISOString().split('T')[0],
+            tags: ticket.tags || [],
+            relevance: 100 // Default relevance for now
+          }));
+          setSearchResults(formattedResults);
+        } else {
+          console.error("Failed to fetch tickets:", result.error);
+        }
+      } catch (error) {
+        console.error("Error fetching tickets:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTickets();
+  }, [filters]);
 
   // Available filter options
   const filterOptions = {
@@ -131,9 +114,9 @@ const AdvancedSearch = () => {
 
     setIsLoading(true);
 
-    // Simulate API call
+    // Apply text search to current results
     setTimeout(() => {
-      let results = [...mockResults];
+      let results = [...searchResults];
 
       // Apply text search
       if (searchQuery.trim()) {
@@ -141,7 +124,7 @@ const AdvancedSearch = () => {
         results = results.filter(result =>
           result.title.toLowerCase().includes(query) ||
           result.description.toLowerCase().includes(query) ||
-          result.tags.some(tag => tag.toLowerCase().includes(query))
+          result.tags.some((tag: string) => tag.toLowerCase().includes(query))
         );
       }
 
@@ -550,7 +533,7 @@ const AdvancedSearch = () => {
 
               {result.tags.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {result.tags.map((tag, index) => (
+                  {result.tags.map((tag: string, index: number) => (
                     <span
                       key={index}
                       className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full"

@@ -1,54 +1,140 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db, ChatSession, ChatMessage } from '@/lib/database';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
-// GET /api/chat - Get all chat sessions
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const customerId = searchParams.get('customerId');
-    const agentId = searchParams.get('agentId');
+    const sessionId = searchParams.get("sessionId");
 
-    // In a real implementation, you'd fetch from database
-    // For now, return mock data
-    const sessions: ChatSession[] = [];
+    if (!sessionId) {
+      return NextResponse.json(
+        { success: false, error: "Session ID is required" },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json({
-      success: true,
-      data: sessions,
-      count: sessions.length
+    const chatSession = await prisma.chatSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        messages: {
+          orderBy: {
+            timestamp: "asc",
+          },
+        },
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        agent: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
+
+    if (!chatSession) {
+      return NextResponse.json(
+        { success: false, error: "Chat session not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, data: chatSession });
   } catch (error) {
-    console.error('Error fetching chat sessions:', error);
+    console.error("Error fetching chat session:", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch chat sessions' },
+      { success: false, error: "Failed to fetch chat session" },
       { status: 500 }
     );
   }
 }
 
-// POST /api/chat - Create a new chat session
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
+    const { sessionId, senderId, senderType, content, type } = body;
 
-    const sessionData = {
-      customerId: body.customerId,
-      agentId: body.agentId,
-      status: body.status || 'active',
-      priority: body.priority || 'medium'
-    };
+    if (!sessionId || !senderId || !content) {
+      return NextResponse.json(
+        { success: false, error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
 
-    const session = await db.createChatSession(sessionData);
+    // Validate sender permissions
+    const chatSession = await prisma.chatSession.findUnique({
+      where: { id: sessionId },
+    });
 
-    return NextResponse.json({
-      success: true,
-      data: session
-    }, { status: 201 });
+    if (!chatSession) {
+      return NextResponse.json(
+        { success: false, error: "Chat session not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if sender is authorized (customer or assigned agent)
+    const isAuthorized =
+      (senderType === "customer" && chatSession.customerId === senderId) ||
+      (senderType === "agent" && chatSession.agentId === senderId) ||
+      session.user.role === "admin";
+
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized to send messages in this session" },
+        { status: 403 }
+      );
+    }
+
+    // Create the message
+    const message = await prisma.chatMessage.create({
+      data: {
+        sessionId,
+        senderId,
+        senderType,
+        content,
+        type: type || "text",
+        read: false,
+      },
+    });
+
+    // Update the chat session
+    await prisma.chatSession.update({
+      where: { id: sessionId },
+      data: {
+        updatedAt: new Date(),
+      },
+    });
+
+    return NextResponse.json({ success: true, data: message }, { status: 201 });
   } catch (error) {
-    console.error('Error creating chat session:', error);
+    console.error("Error creating chat message:", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create chat session' },
+      { success: false, error: "Failed to create chat message" },
       { status: 500 }
     );
   }
