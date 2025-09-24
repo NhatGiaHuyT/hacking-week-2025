@@ -683,18 +683,9 @@ const Chatbox = () => {
       <div className="flex items-center justify-between bg-brand-primary text-white px-4 py-3 shadow-md">
         <div className="flex items-center gap-3">
           <img src="/images/Icon.jpeg" alt="logo" width={40} height={40} style={{ borderRadius: '8px', objectFit: 'cover' }} />
-          <h2 className="text-xl font-medium">CS AI Assistant</h2>
+          <h2 className="text-xl font-medium">Trợ lý chăm sóc khách hàng thông minh</h2>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setCurrentView("chat")} className="flex items-center gap-2 px-4 py-2 bg- bg-brand-accent hover:bg-brand-secondary text-black rounded-lg transition-colors">
-            <FaComments size={16} /> Chat
-          </button>
-          <button onClick={() => setCurrentView("search")} className="flex items-center gap-2 px-4 py-2 bg-brand-accent hover:bg-brand-secondary text-black rounded-lg transition-colors">
-            <FaSearch size={16} /> Search
-          </button>
-          <button onClick={() => setCurrentView("analytics")} className="flex items-center gap-2 px-4 py-2 bg-brand-accent hover:bg-brand-secondary text-black rounded-lg transition-colors">
-            <FaChartBar size={16} /> Analytics
-          </button>
           <LanguageSelector selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} />
           <button onClick={() => setOpenModal(true)} className="p-2 bg-brand-secondary text-black rounded-lg transition-colors">
             <IoSettingsSharp size={24} />
@@ -710,7 +701,7 @@ const Chatbox = () => {
           <form onSubmit={handleQueryAI} className="h-full flex flex-col">
             <div className="mb-4">
               <label className="block text-lg font-medium text-gray-700 mb-2">Miêu Tả Vấn Đề Khách Hàng:</label>
-              <textarea value={issueDescription} onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setIssueDescription(e.target.value)} placeholder="Enter detailed description of the customer issue..." className="w-full h-64 lg:h-21 p-4 border-2 border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-secondary bg-white shadow-sm hover:shadow-md transition-all duration-300" rows={8} />
+              <textarea value={issueDescription} onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setIssueDescription(e.target.value)} placeholder="Nhập chi tiết vấn đề của khách hàng..." className="w-full h-64 lg:h-21 p-4 border-2 border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-secondary bg-white shadow-sm hover:shadow-md transition-all duration-300" rows={8} />
             </div>
 
             <div className="mb-6">
@@ -773,7 +764,7 @@ const Chatbox = () => {
                 {isLoading ? (
                   <>
                     <div className="w-full lg:w-auto bg-brand-primary hover:bg-brand-secondary disabled:bg-brand-primary text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"></div>
-                    <span>Processing...</span>
+                    <span>Chờ xíu nhé...</span>
                   </>
                 ) : (
                   <>
@@ -797,12 +788,12 @@ const Chatbox = () => {
                 )}
               </div>
 
-              <div className="h-48 overflow-y-auto">
+              <div className="overflow-y-auto">
                 {isLoading ? (
                   <div className="flex items-center justify-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="animate-spin rounded-full h-10 w-10 border-4 border-brand-primary border-t-transparent"></div>
-                      <p className="text-gray-500 font-medium">Generating AI response...</p>
+                      <p className="text-gray-500 font-medium">Đang Giải Quyết...</p>
                     </div>
                   </div>
                 ) : aiSummary ? (
@@ -812,8 +803,8 @@ const Chatbox = () => {
                 ) : (
                   <div className="flex items-center justify-center text-gray-400">
                     <div className="text-center">
-                      <p className="font-medium">AI-generated resolution will appear here</p>
-                      <p className="text-sm text-gray-300 mt-1">Describe your issue and click "Query AI" to get started</p>
+                      <p className="font-medium">Hướng giải quyết sẽ hiện ở đây</p>
+                      <p className="text-sm text-gray-300 mt-1">Hãy mô tả vấn đề và cho bé AI giải quyết dùm bạn nhé!</p>
                     </div>
                   </div>
                 )}
@@ -840,7 +831,7 @@ const Chatbox = () => {
                     ))}
                   </ol>
                 ) : (
-                  <p className="text-sm text-gray-400">Actionable steps will appear here after the AI analyzes the issue.</p>
+                  <p className="text-sm text-gray-400">Các bước hành động sẽ được bé AI khuyến nghị tại đây.</p>
                 )}
               </div>
 
@@ -862,7 +853,7 @@ const Chatbox = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400">Clarifying questions will appear here to help gather more context.</p>
+                  <p className="text-sm text-gray-400">Câu hỏi mở có thể mở rộng ngữ cảnh vấn đề.</p>
                 )}
               </div>
             </div>
@@ -903,8 +894,8 @@ const Chatbox = () => {
                       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                         <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                       </div>
-                      <p className="font-medium">Related tickets will appear here after querying AI</p>
-                      <p className="text-sm text-gray-300 mt-1">AI will find similar past issues to help you</p>
+                      <p className="font-medium">Lịch sử các tickets cũ liên quan sẽ hiện ở đây sau khi được xử lý</p>
+                      <p className="text-sm text-gray-300 mt-1">AI sẽ truy vấn các vấn đề tương tự giúp bạn, chill nhé!</p>
                     </div>
                   </div>
                 )}
