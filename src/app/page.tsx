@@ -1,6 +1,6 @@
 "use client";
 
-import Ragsubmit from "./components/ragsubmit";
+import Chatbox from "./components/chatbox";
 import { useState, useEffect } from "react";
 import { TaskContext } from "./context/taskContext";
 import { useSession, signOut } from "next-auth/react";
@@ -28,7 +28,7 @@ export default function Home() {
 
   return (
     <TaskContext.Provider value={{ taskType, setTaskType }}>
-          <Ragsubmit /> 
+          <Chatbox />
     </TaskContext.Provider>
   );
 }

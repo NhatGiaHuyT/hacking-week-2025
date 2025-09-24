@@ -52,3 +52,32 @@ Make the AI customer support system fully functional by replacing mocks, adding 
 - [x] Add Real-Time Chat
 - [x] Add Error Handling
 - [x] Add Testing Framework
+
+---
+
+# Fix Relevance Score Application to All Tickets
+
+## Overview
+Fix the issue where the relevance score (border color) is only applying to the first ticket in the mockTickets list, not to all.
+
+## Steps
+
+1. **Update `getRelevanceColor` function**
+   - Add fallback for invalid relevance values (e.g., if relevance is undefined or not a number, default to gray).
+   - Ensure it returns the correct class for all cases.
+
+2. **Modify the rendering in the map**
+   - Ensure the class is applied correctly by using a more explicit way to set the className.
+   - Add a check for relevance in the rendering.
+
+3. **Add logging**
+   - Temporarily add console.log in `getRelevanceColor` to verify it's called for each ticket and returns the expected class.
+
+4. **Test**
+   - After changes, test with the mock query to ensure all tickets display the border color based on their relevance.
+
+## Status
+- [ ] Update `getRelevanceColor` function
+- [ ] Modify the rendering in the map
+- [ ] Add logging
+- [ ] Test
