@@ -1,241 +1,90 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-interface TicketAnalysis {
-  id: string;
-  title: string;
-  category: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  confidence: number;
-  relatedTickets: RelatedTicket[];
-  suggestedActions: string[];
-  knowledgeGaps: string[];
-  resolutionPatterns: ResolutionPattern[];
-}
-
-interface RelatedTicket {
-  id: string;
-  title: string;
-  status: string;
-  similarity: number;
-  resolution: string;
-  createdAt: string;
-}
-
-interface ResolutionPattern {
-  pattern: string;
-  frequency: number;
-  successRate: number;
-  avgResolutionTime: number;
-}
-
-interface CustomerInsight {
-  behavior: string;
-  commonIssues: string[];
-  satisfaction: number;
-  preferredChannels: string[];
-}
-
-// Mock data for demonstration
-const mockRelatedTickets: RelatedTicket[] = [
-  {
-    id: "#1234",
-    title: "Login issue after password reset",
-    status: "resolved",
-    similarity: 95,
-    resolution: "Reset password and cleared browser cache",
-    createdAt: "2 days ago"
-  },
-  {
-    id: "#1256",
-    title: "Account access problem",
-    status: "resolved",
-    similarity: 87,
-    resolution: "Verified account credentials and updated security settings",
-    createdAt: "1 week ago"
-  },
-  {
-    id: "#1290",
-    title: "Authentication error",
-    status: "resolved",
-    similarity: 76,
-    resolution: "Updated authentication tokens and cleared session data",
-    createdAt: "3 days ago"
-  }
-];
-
-const mockResolutionPatterns: ResolutionPattern[] = [
-  {
-    pattern: "Password Reset Issues",
-    frequency: 45,
-    successRate: 92,
-    avgResolutionTime: 2.3
-  },
-  {
-    pattern: "Account Lockouts",
-    frequency: 23,
-    successRate: 88,
-    avgResolutionTime: 1.8
-  },
-  {
-    pattern: "2FA Problems",
-    frequency: 18,
-    successRate: 95,
-    avgResolutionTime: 3.1
-  }
-];
-
 export async function POST(request: NextRequest) {
+  console.log('🚀 [ANALYZE API] Starting analyze request');
+
   try {
-    const body = await request.json();
-    const { text, mode, taskType } = body;
+    console.log('📥 [ANALYZE API] content-type:', request.headers.get('content-type'));
 
-    // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Get raw body and try to parse intelligently (helps debug non-json input)
+    const raw = await request.text();
+    console.log('📥 [ANALYZE API] Raw request body:', raw);
 
-    if (mode === 'ticket') {
-      // Analyze ticket text and generate mock analysis
-      const analysis: TicketAnalysis = {
-        id: `#${Math.floor(Math.random() * 10000)}`,
-        title: generateTicketTitle(text),
-        category: determineCategory(text, taskType),
-        priority: determinePriority(text),
-        confidence: Math.floor(Math.random() * 20) + 80, // 80-100%
-        relatedTickets: mockRelatedTickets,
-        suggestedActions: generateSuggestedActions(text),
-        knowledgeGaps: generateKnowledgeGaps(text),
-        resolutionPatterns: mockResolutionPatterns
-      };
-
-      return NextResponse.json({
-        success: true,
-        analysis: analysis
-      });
+    let body;
+    try {
+      body = raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      console.warn('⚠️ [ANALYZE API] Could not parse JSON body; using raw text as query');
+      body = { query: raw };
     }
 
-    if (mode === 'insights') {
-      const insights: CustomerInsight = {
-        behavior: "Customer shows consistent communication patterns and prefers detailed technical explanations.",
-        commonIssues: [
-          "Authentication and login problems",
-          "Account security concerns",
-          "Password management issues"
-        ],
-        satisfaction: 4.2,
-        preferredChannels: ["Email", "Chat Support", "Phone"]
-      };
+    const { query } = body;
+    console.log('📝 [ANALYZE API] Received query:', query);
 
-      return NextResponse.json({
-        success: true,
-        insights: insights
-      });
+    if (!query || (typeof query === 'string' && query.trim().length === 0)) {
+      console.log('❌ [ANALYZE API] Query parameter missing');
+      return NextResponse.json({ success: false, error: "Query is required" }, { status: 400 });
     }
 
-    if (mode === 'knowledge') {
+    // If external API expects query as a string, ensure it's stringified
+    const externalQueryPayload = typeof query === 'string' ? query : JSON.stringify(query);
+
+    const externalApiUrl = 'https://monroe-paludal-standoffishly.ngrok-free.dev/api/v1/analyze';
+    console.log('🌐 [ANALYZE API] Calling external API:', externalApiUrl);
+
+    const response = await fetch(externalApiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ query: externalQueryPayload }),
+    });
+
+    console.log('📊 [ANALYZE API] External API response status:', response.status);
+
+    // Always read raw text for diagnostics, then try to parse
+    const responseText = await response.text();
+    console.log('📥 [ANALYZE API] External raw response body:', responseText);
+
+    if (!response.ok) {
+      let parsed;
+      try { parsed = JSON.parse(responseText); } catch {}
+      console.error('❌ [ANALYZE API] External API error:', response.status, response.statusText, parsed || responseText);
       return NextResponse.json({
-        success: true,
-        message: "Knowledge base entry processed successfully"
-      });
+        success: false,
+        error: `External API error: ${response.status} ${response.statusText}`,
+        details: parsed || responseText
+      }, { status: response.status });
     }
 
-    if (mode === 'patterns') {
-      return NextResponse.json({
-        success: true,
-        patterns: mockResolutionPatterns,
-        recommendations: [
-          "Implement proactive password reset notifications",
-          "Add automated account unlock feature",
-          "Enhance 2FA recovery process"
-        ]
-      });
+    let externalResponse;
+    try {
+      externalResponse = JSON.parse(responseText);
+    } catch (e) {
+      console.error('⚠️ [ANALYZE API] External response not valid JSON');
+      return NextResponse.json({ success: false, error: 'External API returned non-JSON' }, { status: 502 });
     }
 
-    return NextResponse.json({
-      success: false,
-      error: "Invalid analysis mode"
-    }, { status: 400 });
+    // Map and return
+    const mappedResponse = {
+      success: true,
+      answer: externalResponse.answer,
+      answer_draft: externalResponse.answer_draft || externalResponse.answer, // Include answer_draft
+      nba: externalResponse.nba,
+      proposed_questions: externalResponse.proposed_questions || externalResponse.proposed || [], // Include proposed_questions
+      similar: externalResponse.similar
+    };
 
+    console.log('📤 [ANALYZE API] Mapped response:', {
+      hasAnswer: !!mappedResponse.answer,
+      hasAnswerDraft: !!mappedResponse.answer_draft,
+      hasNba: !!mappedResponse.nba,
+      hasProposedQuestions: !!mappedResponse.proposed_questions,
+      proposedQuestionsLength: Array.isArray(mappedResponse.proposed_questions) ? mappedResponse.proposed_questions.length : 0,
+      nbaLength: Array.isArray(mappedResponse.nba) ? mappedResponse.nba.length : 0
+    });
+
+    return NextResponse.json(mappedResponse);
   } catch (error) {
-    console.error('Analysis error:', error);
-    return NextResponse.json({
-      success: false,
-      error: "Analysis failed"
-    }, { status: 500 });
+    console.error('💥 [ANALYZE API] Critical error occurred:', error);
+    return NextResponse.json({ success: false, error: "Analysis failed" }, { status: 500 });
   }
-}
-
-function generateTicketTitle(text: string): string {
-  // Simple title generation based on text content
-  const words = text.split(' ').slice(0, 6);
-  return words.join(' ') + (words.length >= 6 ? '...' : '');
-}
-
-function determineCategory(text: string, taskType: string): string {
-  const lowerText = text.toLowerCase();
-
-  if (lowerText.includes('login') || lowerText.includes('password') || lowerText.includes('account')) {
-    return 'Authentication';
-  }
-  if (lowerText.includes('payment') || lowerText.includes('billing') || lowerText.includes('charge')) {
-    return 'Billing';
-  }
-  if (lowerText.includes('technical') || lowerText.includes('error') || lowerText.includes('bug')) {
-    return 'Technical Support';
-  }
-
-  return taskType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-}
-
-function determinePriority(text: string): 'low' | 'medium' | 'high' | 'urgent' {
-  const lowerText = text.toLowerCase();
-
-  if (lowerText.includes('urgent') || lowerText.includes('critical') || lowerText.includes('emergency')) {
-    return 'urgent';
-  }
-  if (lowerText.includes('important') || lowerText.includes('asap') || lowerText.includes('broken')) {
-    return 'high';
-  }
-  if (lowerText.includes('soon') || lowerText.includes('when possible')) {
-    return 'medium';
-  }
-
-  return 'low';
-}
-
-function generateSuggestedActions(text: string): string[] {
-  const actions = [
-    "Verify customer account credentials",
-    "Check system logs for related errors",
-    "Test the reported functionality",
-    "Document the issue in the knowledge base",
-    "Escalate to senior support if needed"
-  ];
-
-  // Add specific actions based on content
-  const lowerText = text.toLowerCase();
-  if (lowerText.includes('login')) {
-    actions.push("Reset customer password");
-    actions.push("Clear browser cache and cookies");
-  }
-  if (lowerText.includes('error')) {
-    actions.push("Check error logs for detailed information");
-    actions.push("Test alternative solutions");
-  }
-
-  return actions;
-}
-
-function generateKnowledgeGaps(text: string): string[] {
-  const gaps = [
-    "Document the exact error message and reproduction steps",
-    "Add troubleshooting guide for similar issues",
-    "Update FAQ with common solutions"
-  ];
-
-  const lowerText = text.toLowerCase();
-  if (lowerText.includes('login')) {
-    gaps.push("Create step-by-step login troubleshooting guide");
-    gaps.push("Document browser compatibility issues");
-  }
-
-  return gaps;
 }
